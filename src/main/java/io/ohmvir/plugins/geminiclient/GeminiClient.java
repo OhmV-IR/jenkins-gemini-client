@@ -124,7 +124,11 @@ public class GeminiClient extends ModelClient<GeminiModelSettings, GeminiClientS
                     client.models.generateContent(configuration.getModelName(), contents, config.build());
             List<ModelOutput> outputs = new ArrayList<>();
             boolean toolCall = false;
-            for (Part part : response.parts()) {
+            List<Part> responseParts = response.parts();
+            if (responseParts == null) {
+                throw new IllegalStateException("Gemini API response did not contain response parts");
+            }
+            for (Part part : responseParts) {
                 if (part.text().isPresent()) {
                     if (part.thought().orElse(false))
                         outputs.add(new ThinkingContent(part.text().get()));
