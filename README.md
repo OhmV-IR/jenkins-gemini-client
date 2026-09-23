@@ -1,4 +1,4 @@
-# jenkinscr
+# Jenkins AI Synapse Gemini Client
 
 ## Introduction
 

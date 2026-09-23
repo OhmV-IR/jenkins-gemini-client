@@ -50,9 +50,9 @@ pipeline {
                         steps {
                             sh """
                                 mkdir -p output
-                                cp target/jenkinsaisynapse.hpi output/jenkinsaisynapse-jvm-${JDK_VERSION}.hpi
+                                cp target/geminiclient.hpi output/geminiclient-jvm-${JDK_VERSION}.hpi
                             """
-                            archiveArtifacts artifacts: "output/jenkinsaisynapse-jvm-${JDK_VERSION}.hpi",
+                            archiveArtifacts artifacts: "output/geminiclient-jvm-${JDK_VERSION}.hpi",
                                              fingerprint: true
                             sh 'rm -rf output'
                         }
