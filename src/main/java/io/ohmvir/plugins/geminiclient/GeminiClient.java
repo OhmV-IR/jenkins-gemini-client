@@ -253,7 +253,7 @@ public class GeminiClient extends ModelClient<GeminiModelSettings, GeminiClientS
     }
 
     private static List<ModelOutput> filterOutputs(ModelRequest request, List<ModelOutput> outputs) {
-        Set<Class<ModelOutput>> requested = request.getOutputClasses();
+        Set<Class<? extends ModelOutput>> requested = request.getOutputClasses();
         if (requested == null || requested.isEmpty()) return outputs;
         return outputs.stream()
                 .filter(output ->
