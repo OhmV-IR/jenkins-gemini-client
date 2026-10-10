@@ -77,8 +77,11 @@ public class GeminiModelSettings extends ModelConfiguration {
                         "Please select a valid API Key credential to populate models", "", true));
                 return models;
             }
-            String apiKey =
-                    Jenkins.getInstanceOrNull() == null ? null : SecretsUtils.getSecretText(apiKeyCredentialsId, null);
+            // Listing models makes an outbound call with a stored credential, so restrict it to administrators.
+            Jenkins jenkins = Jenkins.getInstanceOrNull();
+            String apiKey = jenkins == null || !jenkins.hasPermission(Jenkins.ADMINISTER)
+                    ? null
+                    : SecretsUtils.getSecretText(apiKeyCredentialsId, null);
             if (apiKey == null || apiKey.isBlank()) {
                 models.add(new ListBoxModel.Option(
                         "Please select a valid API Key credential to populate models", "", true));
@@ -89,6 +92,7 @@ public class GeminiModelSettings extends ModelConfiguration {
                     .httpOptions(HttpOptions.builder().timeout(10_000).build())
                     .build()) {
                 for (Model model : client.models.list(ListModelsConfig.builder().build())) {
+                    if (!supportsGenerateContent(model)) continue;
                     String name = model.name().orElse("");
                     if (name.startsWith("models/")) name = name.substring("models/".length());
                     if (!name.isBlank()) models.add(name, name);
@@ -98,6 +102,13 @@ public class GeminiModelSettings extends ModelConfiguration {
                 models.add(new ListBoxModel.Option("Error retrieving models from Gemini: " + e.getMessage(), "", true));
             }
             return models;
+        }
+
+        /** Embedding, image and video models are listed too, but can't serve generateContent requests. */
+        static boolean supportsGenerateContent(Model model) {
+            return model.supportedActions()
+                    .map(actions -> actions.contains("generateContent"))
+                    .orElse(true);
         }
 
         public ListBoxModel doFillApiKeyCredentialsIdItems(
@@ -121,8 +132,10 @@ public class GeminiModelSettings extends ModelConfiguration {
 
         @POST
         public FormValidation doCheckApiKeyCredentialsId(@QueryParameter String value) {
+            Jenkins jenkins = Jenkins.getInstanceOrNull();
+            if (jenkins != null && !jenkins.hasPermission(Jenkins.ADMINISTER)) return FormValidation.ok();
             if (value == null || value.trim().isEmpty()) return FormValidation.error("API Key Credential is required");
-            if (Jenkins.getInstanceOrNull() != null && SecretsUtils.getSecretText(value, null) == null) {
+            if (jenkins != null && SecretsUtils.getSecretText(value, null) == null) {
                 return FormValidation.error(
                         "The selected credential ID could not be found or does not resolve to a valid string credential");
             }
